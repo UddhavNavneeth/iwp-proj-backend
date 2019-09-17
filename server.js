@@ -44,9 +44,33 @@ app.post('/api/signup', (req, res) => {
 
 
 const secret = 'uddhav';
+// app.post('/api/login', (req, res) => {
+//     const { username, password } = req.body;
+//     User.findOne({username}).then((user) => {
+//         if (!user) {
+//             return Promise.reject('Not a valid username');
+//             console.log(aa)
+//         }
+//         user.isCorrectPassword(password).then((res) => {
+//             const payload = { username };
+//             const token = jwt.sign(payload, secret, {
+//               expiresIn: '1h'
+//             });
+//             res.cookie('token', token, { httpOnly: true })
+//             .send('Succesfully Logged In');
+//         })
+        
+//     }).catch((e) => {
+//         res.send(`Error in authenticating: ${e}`);
+//     })
+// })
+
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     User.findOne({username}).then((user) => {
+        if (!user) {
+            Promise.reject(`No user`);
+        }
         user.isCorrectPassword(password, function(err, same) {
             if (err) {
               res.status(500)
@@ -74,8 +98,8 @@ app.post('/api/login', (req, res) => {
 })
 
 app.post('/api/authenticate', function(req, res) {
-    const { email, password } = req.body;
-    User.findOne({ email }, function(err, user) {
+    const { username, password } = req.body;
+    User.findOne({ username }, function(err, user) {
       if (err) {
         console.error(err);
         res.status(500)
@@ -85,7 +109,7 @@ app.post('/api/authenticate', function(req, res) {
       } else if (!user) {
         res.status(401)
           .json({
-            error: 'Incorrect email or password'
+            error: 'Incorrect username or password'
           });
       } else {
         user.isCorrectPassword(password, function(err, same) {
@@ -101,7 +125,7 @@ app.post('/api/authenticate', function(req, res) {
             });
           } else {
             // Issue token
-            const payload = { email };
+            const payload = { username };
             const token = jwt.sign(payload, secret, {
               expiresIn: '1h'
             });
