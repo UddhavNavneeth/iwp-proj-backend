@@ -16,9 +16,17 @@ app.use(bodyParser.json());
 app.use(morgan('combined'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
-app.use(cors({credentials: true,
-    origin: 'http://localhost:3000',
-    exposedHeaders: ['Authorization']}));
+app.use(cors({
+    // credentials: true,
+    // origin: 'http://localhost:3000',
+    // exposedHeaders: ['Authorization']
+  }));
+
+port = process.env.PORT || 8000;
+
+app.get('/', (req, res) => {
+  res.send('<h1>Heroku Check</h1>');
+})
 
 app.get('/api/home',(req, res) => {
     res.send('Welcome!');
@@ -189,5 +197,5 @@ app.post('/api/authenticate', function(req, res) {
       res.clearCookie('token');
   })
 
-app.listen(8000);
-console.log(`Server is up on port 8000`);
+app.listen(port);
+console.log(`Server is up on port ${port}`);
