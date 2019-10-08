@@ -16,11 +16,13 @@ app.use(bodyParser.json());
 app.use(morgan('combined'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
-app.use(cors({
-    // credentials: true,
-    // origin: 'http://localhost:3000',
-    // exposedHeaders: ['Authorization']
-  }));
+app.use(cors(
+  // {
+  //   credentials: true,
+  //   origin: 'http://localhost:3000',
+  //   exposedHeaders: ['Authorization']
+  // }
+  ));
 
 port = process.env.PORT || 8000;
 
