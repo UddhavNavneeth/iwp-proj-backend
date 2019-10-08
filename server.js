@@ -1,23 +1,35 @@
 const express = require('express');
 const _ = require('lodash');
+const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 const {User} = require('./models/user');
+const {Post} = require('./models/post');
+const {withAuth} = require('./middleware/authenticate');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(morgan('combined'));
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({credentials: true,
+    origin: 'http://localhost:3000',
+    exposedHeaders: ['Authorization']}));
 
 app.get('/api/home',(req, res) => {
     res.send('Welcome!');
 });
 
-app.get('/api/secret', (req, res) => {
-    res.send('The password is potato');
+app.get('/api/secret', withAuth, (req, res) => {
+    res.send(`The username is ${req.username}`);
+});
+
+app.get('/checkToken', withAuth, (req, res) => {
+    res.sendStatus(200);
 });
 
 app.post('/api/signup', (req, res) => {
@@ -65,37 +77,37 @@ const secret = 'uddhav';
 //     })
 // })
 
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    User.findOne({username}).then((user) => {
-        if (!user) {
-            Promise.reject(`No user`);
-        }
-        user.isCorrectPassword(password, function(err, same) {
-            if (err) {
-              res.status(500)
-                .json({
-                  error: 'Internal error please try again'
-              });
-            } else if (!same) {
-              res.status(401)
-                .json({
-                  error: 'Incorrect username or password'
-              });
-            } else {
-              // Issue token
-              const payload = { username };
-              const token = jwt.sign(payload, secret, {
-                expiresIn: '1h'
-              });
-              res.cookie('token', token, { httpOnly: true })
-                .send('Succesfully Logged In');
-            }
-          });
-    }).catch((e) => {
-        res.send(e);
-    })
-})
+// app.post('/api/login', (req, res) => {
+//     const { username, password } = req.body;
+//     User.findOne({username}).then((user) => {
+//         if (!user) {
+//             Promise.reject(`No user`);
+//         }
+//         user.isCorrectPassword(password, function(err, same) {
+//             if (err) {
+//               res.status(500)
+//                 .json({
+//                   error: 'Internal error please try again'
+//               });
+//             } else if (!same) {
+//               res.status(401)
+//                 .json({
+//                   error: 'Incorrect username or password'
+//               });
+//             } else {
+//               // Issue token
+//               const payload = { username };
+//               const token = jwt.sign(payload, secret, {
+//                 expiresIn: '1h'
+//               });
+//               res.cookie('token', token, { httpOnly: true })
+//                 .send('Succesfully Logged In');
+//             }
+//           });
+//     }).catch((e) => {
+//         res.send(e);
+//     })
+// })
 
 app.post('/api/authenticate', function(req, res) {
     const { username, password } = req.body;
@@ -129,13 +141,53 @@ app.post('/api/authenticate', function(req, res) {
             const token = jwt.sign(payload, secret, {
               expiresIn: '1h'
             });
-            res.cookie('token', token, { httpOnly: true })
+            res.cookie('token', token, { expires: new Date(Date.now() + 900000), httpOnly: true })
               .sendStatus(200);
           }
         });
       }
     });
   });
+
+  app.get('/getUsers', withAuth, (req,res) => {
+    User.find({username: {$ne : req.username}}).then((doc) => {
+        res.send(doc);
+    }).catch((e) => {
+        res.send(e);
+    })
+  })
+
+  app.post('/newPost', withAuth, (req,res) => {
+    let {message} = req.body;
+    let owner = req.username;
+    let post = new Post({
+        owner: username,
+        message: message
+    });
+
+    post.save().then((doc) => {
+        res.send(doc);
+    }).catch((e) => {
+        res.send(e);
+    })
+  })
+
+  app.post('/addFriend', (req, res) => {
+      User.findOne({username: req.username}).then((doc) => {
+          doc.friends.push(req.body.friend);
+          doc.save().then((result) => {
+              res.send(result);
+          })
+      }).catch((e) => {
+          res.send(e);
+      })
+  })
+
+
+  //??????????????
+  app.get('/logout', withAuth, (req,res) => {
+      res.clearCookie('token');
+  })
 
 app.listen(8000);
 console.log(`Server is up on port 8000`);
