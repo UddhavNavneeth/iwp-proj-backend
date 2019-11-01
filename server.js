@@ -28,10 +28,11 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/home',(req, res) => {
+    console.log(req.cookies);
     res.send('Welcome!');
 });
 
-app.get('/api/secret', withAuth, (req, res) => {
+app.post('/api/secret', withAuth, (req, res) => {
     res.send(`The username is ${req.username}`);
 });
 
@@ -138,8 +139,7 @@ app.post('/api/authenticate', function(req, res) {
                 error: 'Internal error please try again'
             });
           } else if (!same) {
-            res.status(401)
-              .json({
+            res.status(401).json({
                 error: 'Incorrect email or password'
             });
           } else {
@@ -148,15 +148,19 @@ app.post('/api/authenticate', function(req, res) {
             const token = jwt.sign(payload, secret, {
               expiresIn: '1h'
             });
-            res.cookie('token', token, { expires: new Date(Date.now() + 900000), httpOnly: true })
-              .sendStatus(200);
+            user1 = {...user["_doc"]};
+            user1.token = token;
+            // console.log(user1);
+            res.send(user1).status(200);
+            // res.cookie('token', token, { expires: new Date(Date.now() + 900000) })
+            //   .sendStatus(200);
           }
         });
       }
     });
   });
 
-  app.get('/getUsers', withAuth, (req,res) => {
+  app.post('/getUsers', withAuth, (req,res) => {
     User.find({username: {$ne : req.username}}).then((doc) => {
         res.send(doc);
     }).catch((e) => {
@@ -164,12 +168,21 @@ app.post('/api/authenticate', function(req, res) {
     })
   })
 
+  app.post('/getPosts', withAuth, (req,res) => {
+    Post.find({owner: {$ne : req.username}}).then((doc) => {
+      res.send(doc);
+    }).catch((e) => {
+      res.send(e);
+    })
+  })
+
   app.post('/newPost', withAuth, (req,res) => {
-    let {message} = req.body;
+    let message = req.body.message;
     let owner = req.username;
     let post = new Post({
-        owner: username,
-        message: message
+        owner: owner,
+        message: message,
+        likes: 0
     });
 
     post.save().then((doc) => {
@@ -177,6 +190,24 @@ app.post('/api/authenticate', function(req, res) {
     }).catch((e) => {
         res.send(e);
     })
+  })
+
+  app.post('/addLike', withAuth, async (req, res) => {
+    try {
+      const myPost = await Post.findById(req.body.id);
+      
+      myPost.likes = myPost.likes + 1;
+
+      myPost.save().then((resp) => {
+        res.send(resp);
+      }).catch((e) => {
+        res.send(e);
+      })
+
+    } catch(e) {
+      console.log(e);
+      res.send(e);
+    }
   })
 
   app.post('/addFriend', (req, res) => {

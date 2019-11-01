@@ -33,7 +33,17 @@ let IuserSchema = mongoose.Schema({
     },
     friends: {
         type: Array
-    }
+    },
+    posts: [{
+      title: {
+        type: String,
+        trim: true
+      },
+      likes: {
+        type: String,
+        trim: true
+      }
+    }]
     
   });
 
