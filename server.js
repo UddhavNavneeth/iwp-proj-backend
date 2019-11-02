@@ -29,7 +29,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/home',(req, res) => {
     console.log(req.cookies);
-    res.send('Welcome!');
+    res.send('Welcome to the Express Community!');
 });
 
 app.post('/api/secret', withAuth, (req, res) => {
@@ -173,6 +173,15 @@ app.post('/api/authenticate', function(req, res) {
       res.send(doc);
     }).catch((e) => {
       res.send(e);
+    })
+  })
+
+  app.post('/getMyPosts', withAuth, (req, res) => {
+    Post.find({owner: req.username}).then((doc) => {
+      res.send(doc);
+    }).catch((e) => {
+      res.send(e);
+      console.log(e);
     })
   })
 
